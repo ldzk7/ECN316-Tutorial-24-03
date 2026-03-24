@@ -15,13 +15,12 @@ st.markdown(
     /* Main page background (full) */
     .css-18e3th9 {  /* main content container */
         background-color: blue !important;
-        color: blue;
+        color: black;
     }
 
     /* Body background */
     .css-1d391kg {  /* outermost container */
         background-color: blue !important;
-    }
     }
 
     /* Header text color */
