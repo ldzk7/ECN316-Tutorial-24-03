@@ -2,6 +2,37 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+st.markdown(
+    """
+    <style>
+    /* Sidebar background */
+    [data-testid="stSidebar"] {
+        background-color: black;
+        color: white;
+    }
+    
+    /* Main page background */
+    [data-testid="stAppViewContainer"] {
+        background-color: #ff4b4b;  /* red */
+        color: white;
+    }
+
+    /* Header text color */
+    h1, h2, h3, h4, h5, h6 {
+        color: white;
+    }
+
+    /* Optional: buttons */
+    div.stButton > button:first-child {
+        background-color: white;
+        color: black;
+        border-radius: 10px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+    
 # ---------------------------
 # App title
 # ---------------------------
