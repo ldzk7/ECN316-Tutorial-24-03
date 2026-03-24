@@ -1,123 +1,120 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+
+# ---------------------------
+# App title
+# ---------------------------
 st.title("Portfolio Optimizer")
+
+# ---------------------------
 # Sidebar inputs
+# ---------------------------
 st.sidebar.header("Asset Data")
-r_1 = st.sidebar.number_input("Asset 1 Expected Return (%)",
-value=5.0) / 100
-sd_1 = st.sidebar.number_input("Asset 1 Standard Deviation (%)",
-value=9.0) / 100
-r_2 = st.sidebar.number_input("Asset 2 Expected Return (%)",
-value=12.0) / 100
-sd_2 = st.sidebar.number_input("Asset 2 Standard Deviation (%)",
-value=20.0) / 100
-rho = st.sidebar.number_input("Correlation",
-min_value=-1.0, max_value=1.0, value=-0.2)
-r_f = st.sidebar.number_input("Risk-Free Rate (%)",
-value=2.0) / 100
+
+r_1 = st.sidebar.number_input("Asset 1 Expected Return (%)", value=5.0) / 100
+sd_1 = st.sidebar.number_input("Asset 1 Standard Deviation (%)", value=9.0) / 100
+
+r_2 = st.sidebar.number_input("Asset 2 Expected Return (%)", value=12.0) / 100
+sd_2 = st.sidebar.number_input("Asset 2 Standard Deviation (%)", value=20.0) / 100
+
+rho = st.sidebar.number_input("Correlation", min_value=-1.0, max_value=1.0, value=-0.2)
+
+r_f = st.sidebar.number_input("Risk-Free Rate (%)", value=2.0) / 100
+
 st.sidebar.header("Your Preferences")
-gamma = st.sidebar.slider("Risk Aversion (gamma)",
-min_value=0.1, max_value=10.0, value=5.0, step=0.1)
+gamma = st.sidebar.slider("Risk Aversion (gamma)", min_value=0.1, max_value=10.0, value=5.0, step=0.1)
 
-
+# ---------------------------
 # Functions
+# ---------------------------
 def portfolio_ret(w1, r1, r2):
+    """Portfolio expected return for weight w1 in asset 1"""
     return w1 * r1 + (1 - w1) * r2
 
-
 def portfolio_sd(w1, sd1, sd2, rho):
-    return np.sqrt(w1 ** 2 * sd1 ** 2 + (1 - w1) ** 2 * sd2 ** 2 + 2 * rho * w1 * (1 - w1) * sd1 * sd2)
+    """Portfolio standard deviation for weight w1 in asset 1"""
+    return np.sqrt(
+        w1**2 * sd1**2 + (1 - w1)**2 * sd2**2 + 2 * rho * w1 * (1 - w1) * sd1 * sd2
+    )
 
-r_h = 0.08  
- 
-
-sd_h = 0.1     # standard deviation for high-carbon asset
-sd_f = 0.05    # standard deviation for low-carbon (or foreign) asset
-rho_hf = 0.2   # correlation between them
-w = 0.6        # portfolio weight in high-carbon asset
-r_free = 0.04
-
-# Find tangency portfolio
+# ---------------------------
+# Tangency portfolio (Sharpe-maximizing)
+# ---------------------------
 weights = np.linspace(0, 1, 1000)
 sharpe_ratios = []
 
 for w in weights:
-    ret = portfolio_ret(w, r_h, r_f)
-    sd = portfolio_sd(w, sd_h, sd_f, rho_hf)
-    if sd > 0:
-        sharpe = (ret - r_free) / sd
-        sharpe_ratios.append(sharpe)
-    else:
-        sharpe_ratios.append(-np.inf)
+    ret = portfolio_ret(w, r_1, r_2)
+    sd = portfolio_sd(w, sd_1, sd_2, rho)
+    sharpe = (ret - r_f) / sd if sd > 0 else -np.inf
+    sharpe_ratios.append(sharpe)
 
 max_idx = np.argmax(sharpe_ratios)
 w1_tangency = weights[max_idx]
 w2_tangency = 1 - w1_tangency
 
-ret_tangency = portfolio_ret(w1_tangency, r_h, r_f)
-sd_tangency = portfolio_sd(w1_tangency, sd_h, sd_f, rho_hf)
+ret_tangency = portfolio_ret(w1_tangency, r_1, r_2)
+sd_tangency = portfolio_sd(w1_tangency, sd_1, sd_2, rho)
 
-# Find optimal portfolio
-if sd_tangency > 0:
-    w_tangency_optimal = (ret_tangency - r_free) / (gamma * sd_tangency ** 2)
-else:
-    w_tangency_optimal = 0
+# ---------------------------
+# Optimal portfolio weights
+# ---------------------------
+w_tangency_optimal = (ret_tangency - r_f) / (gamma * sd_tangency**2) if sd_tangency > 0 else 0
 
-# Complete portfolio weights
+# Complete portfolio including risk-free asset
 w1_optimal = w_tangency_optimal * w1_tangency
 w2_optimal = w_tangency_optimal * w2_tangency
 w_rf_optimal = 1 - w_tangency_optimal
 
 # Optimal portfolio characteristics
-ret_optimal = r_free + w_tangency_optimal * (ret_tangency - r_free)
+ret_optimal = r_f + w_tangency_optimal * (ret_tangency - r_f)
 sd_optimal = abs(w_tangency_optimal) * sd_tangency
 
+# ---------------------------
 # Display results
+# ---------------------------
 tab1, tab2 = st.tabs(["📊 Results", "📈 Graph"])
 
 with tab1:
     st.header("Your Optimal Portfolio")
-
     col1, col2, col3 = st.columns(3)
-    col1.metric("Risk-Free Asset", f"{w_rf_optimal * 100:.2f}%")
-    col2.metric("Asset 1", f"{w1_optimal * 100:.2f}%")
-    col3.metric("Asset 2", f"{w2_optimal * 100:.2f}%")
+    col1.metric("Risk-Free Asset", f"{w_rf_optimal*100:.2f}%")
+    col2.metric("Asset 1", f"{w1_optimal*100:.2f}%")
+    col3.metric("Asset 2", f"{w2_optimal*100:.2f}%")
 
     st.write("")
     col1, col2 = st.columns(2)
-    col1.metric("Expected Return", f"{ret_optimal * 100:.2f}%")
-    col2.metric("Risk (Std Dev)", f"{sd_optimal * 100:.2f}%")
+    col1.metric("Expected Return", f"{ret_optimal*100:.2f}%")
+    col2.metric("Risk (Std Dev)", f"{sd_optimal*100:.2f}%")
 
+# ---------------------------
+# Efficient frontier & graph
+# ---------------------------
 with tab2:
     st.header("Portfolio Visualization")
 
-    # Generate efficient frontier
     weights_plot = np.linspace(0, 1, 200)
-    returns_frontier = [portfolio_ret(w, r_h, r_f) for w in weights_plot]
-    sds_frontier = [portfolio_sd(w, sd_h, sd_f, rho_hf) for w in weights_plot]
+    returns_frontier = [portfolio_ret(w, r_1, r_2) for w in weights_plot]
+    sds_frontier = [portfolio_sd(w, sd_1, sd_2, rho) for w in weights_plot]
 
-    # Create plot
     fig, ax = plt.subplots(figsize=(10, 6))
-
-    # Efficient frontier
     ax.plot(sds_frontier, returns_frontier, 'b-', linewidth=2, label='Efficient Frontier')
 
     # Capital Market Line
     sd_max = max(sds_frontier) * 1.2
     sd_cml = np.linspace(0, sd_max, 100)
-    ret_cml = r_free + (ret_tangency - r_free) / sd_tangency * sd_cml if sd_tangency > 0 else r_free * np.ones_like(
-        sd_cml)
+    ret_cml = r_f + (ret_tangency - r_f)/sd_tangency * sd_cml if sd_tangency > 0 else r_f*np.ones_like(sd_cml)
     ax.plot(sd_cml, ret_cml, 'g--', linewidth=2, label='Capital Market Line')
 
     # Tangency portfolio
-    ax.scatter(sd_tangency, ret_tangency, color='red', s=200, zorder=5, marker='*', label='Tangency Portfolio')
+    ax.scatter(sd_tangency, ret_tangency, color='red', s=200, marker='*', label='Tangency Portfolio')
 
     # Optimal portfolio
-    ax.scatter(sd_optimal, ret_optimal, color='orange', s=200, zorder=5, marker='D', label='Your Optimal Portfolio')
+    ax.scatter(sd_optimal, ret_optimal, color='orange', s=200, marker='D', label='Your Optimal Portfolio')
 
     # Risk-free asset
-    ax.scatter(0, r_free, color='green', s=150, zorder=5, marker='s', label='Risk-Free Asset')
+    ax.scatter(0, r_f, color='green', s=150, marker='s', label='Risk-Free Asset')
 
     ax.set_xlabel('Risk (Standard Deviation)')
     ax.set_ylabel('Expected Return')
