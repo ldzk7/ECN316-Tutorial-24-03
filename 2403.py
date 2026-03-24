@@ -31,7 +31,7 @@ st.markdown(
 
     /* Optional: buttons */
     div.stButton > button:first-child {
-        background-color: white;
+        background-color: blue;
         color: black;
         border-radius: 10px;
     }
