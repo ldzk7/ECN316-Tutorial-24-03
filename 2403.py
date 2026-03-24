@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 st.markdown(
     """
     <style>
@@ -11,7 +10,7 @@ st.markdown(
         background-color: grey;
         color: black;
     }
-    
+
     /* Full Main page background (full) */
     .stApp {  /* main content container */
         background-color: tan !important;
@@ -35,110 +34,142 @@ st.markdown(
         border-radius: 10px;
     }
     </style>
-    """,  
-    unsafe_allow_html=True
-)
-    
-# ---------------------------
-# App title
-# ---------------------------
-st.title("Portfolio Optimizer")
+    """,
+    unsafe_allow_html=True)
 
-# ---------------------------
-# Sidebar inputs
-# ---------------------------
-st.sidebar.header("Asset Data")
+st.title("Sustainable Finance Portfolio Optimisation App")
 
-r_1 = st.sidebar.number_input("Asset 1 Expected Return (%)", value=5.0) / 100
-sd_1 = st.sidebar.number_input("Asset 1 Standard Deviation (%)", value=9.0) / 100
+# ------------------------------
+# Inputs from the user
+# ------------------------------
+st.subheader("Enter Portfolio Inputs")
 
-r_2 = st.sidebar.number_input("Asset 2 Expected Return (%)", value=12.0) / 100
-sd_2 = st.sidebar.number_input("Asset 2 Standard Deviation (%)", value=20.0) / 100
+r_h = st.number_input("Asset 1 Expected Return (%) [e.g., 5]:", value=5.0) / 100
+sd_h = st.number_input("Asset 1 Standard Deviation (%) [e.g., 9]:", value=9.0) / 100
 
-rho = st.sidebar.number_input("Correlation", min_value=-1.0, max_value=1.0, value=0.2)
+r_f = st.number_input("Asset 2 Expected Return (%) [e.g., 12]:", value=12.0) / 100
+sd_f = st.number_input("Asset 2 Standard Deviation (%) [e.g., 20]:", value=20.0) / 100
 
-r_f = st.sidebar.number_input("Risk-Free Rate (%)", value=2.0) / 100
+rho_hf = st.slider("Correlation between Asset 1 and 2:", min_value=-1.0, max_value=1.0, value=-0.2, step=0.01)
 
+r_free = st.number_input("Risk-Free Rate (%) [e.g., 2]:", value=2.0) / 100
 
-st.sidebar.header("Your Preferences")
-gamma = st.sidebar.slider("Risk Aversion (gamma)", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
+gamma = st.number_input("Risk Aversion (γ) [e.g., 5]:", value=5.0, min_value=0.1)
 
-# ---------------------------
+esg_h = st.number_input("Asset 1 ESG Score [e.g., 80]:", value=80.0, min_value=0.0)
+esg_f = st.number_input("Asset 2 ESG Score [e.g., 55]:", value=55.0, min_value=0.0)
+
+lambda_esg = st.number_input("ESG Preference (λ) [e.g., 2]:", value=2.0, min_value=0.0)
+
+# ------------------------------
 # Functions
-# ---------------------------
+# ------------------------------
 def portfolio_ret(w1, r1, r2):
-    """Portfolio expected return for weight w1 in asset 1"""
     return w1 * r1 + (1 - w1) * r2
 
 def portfolio_sd(w1, sd1, sd2, rho):
-    """Portfolio standard deviation for weight w1 in asset 1"""
-    return np.sqrt(w1**2 * sd1**2 + (1 - w1)**2 * sd2**2 + 2 * rho * w1 * (1 - w1) * sd1 * sd2)
+    return np.sqrt(w1*2 * sd12 + (1 - w1)2 * sd2*2 + 2 * rho * w1 * (1 - w1) * sd1 * sd2)
 
-# ---------------------------
-# Tangency portfolio (Sharpe-maximizing)
-# ---------------------------
-weights = np.linspace(0, 1, 1000)
-sharpe_ratios = []
+def portfolio_esg(w1, esg1, esg2):
+    return w1 * esg1 + (1 - w1) * esg2
 
-for w in weights:
-    ret = portfolio_ret(w, r_1, r_2)
-    sd = portfolio_sd(w, sd_1, sd_2, rho)
-    sharpe = (ret - r_f) / sd if sd > 0 else -np.inf
-    sharpe_ratios.append(sharpe)
+# ------------------------------
+# ESG Portfolio Selection
+# ------------------------------
+if st.button("Calculate Optimal Portfolio"):
 
-max_idx = np.argmax(sharpe_ratios)
-w1_tangency = weights[max_idx]
-w2_tangency = 1 - w1_tangency
+    weights = np.linspace(0, 1, 1000)
 
-ret_tangency = portfolio_ret(w1_tangency, r_1, r_2)
-sd_tangency = portfolio_sd(w1_tangency, sd_1, sd_2, rho)
+    sharpe_ratios = []
+    utility_scores = []
+    esg_scores = []
 
-# ---------------------------
-# Optimal portfolio weights
-# ---------------------------
-w_tangency_optimal = (ret_tangency - r_f) / (gamma * sd_tangency**2) if sd_tangency > 0 else 0
+    for w in weights:
+        ret = portfolio_ret(w, r_h, r_f)
+        sd = portfolio_sd(w, sd_h, sd_f, rho_hf)
+        esg = portfolio_esg(w, esg_h, esg_f)
 
-# Compute raw weights
-w1_optimal = w_tangency_optimal * w1_tangency
-w2_optimal = w_tangency_optimal * w2_tangency
-w_rf_optimal = 1 - (w1_optimal + w2_optimal)
+        esg_scores.append(esg)
 
-# ---------------------------
-# Apply weight constraints: 0–100%
-# ---------------------------
-w1_optimal = np.clip(w1_optimal, 0, 1)
-w2_optimal = np.clip(w2_optimal, 0, 1)
-w_rf_optimal = np.clip(w_rf_optimal, 0, 1)
+        if sd > 0:
+            sharpe = (ret - r_free) / sd
+            sharpe_ratios.append(sharpe)
+        else:
+            sharpe_ratios.append(-np.inf)
 
-# Normalize so total = 100%
-total = w1_optimal + w2_optimal + w_rf_optimal
-w1_optimal /= total
-w2_optimal /= total
-w_rf_optimal /= total
+        utility = ret - 0.5 * gamma * sd**2 + lambda_esg * (esg / 100)
+        utility_scores.append(utility)
 
-# Recompute portfolio return & risk
-ret_optimal = w1_optimal * r_1 + w2_optimal * r_2 + w_rf_optimal * r_f
-sd_optimal = np.sqrt(
-    (w1_optimal * sd_1)**2 + (w2_optimal * sd_2)**2 + 2 * w1_optimal * w2_optimal * rho * sd_1 * sd_2
-)
+    max_idx = np.argmax(utility_scores)
+    w1_esg = weights[max_idx]
+    w2_esg = 1 - w1_esg
 
-# ---------------------------
-# Display results
-# ---------------------------
-tab1, tab2 = st.tabs(["📊 Results", "📈 Graph"])
+    ret_esg = portfolio_ret(w1_esg, r_h, r_f)
+    sd_esg = portfolio_sd(w1_esg, sd_h, sd_f, rho_hf)
+    esg_portfolio = portfolio_esg(w1_esg, esg_h, esg_f)
 
-with tab1:
-    st.header("Your Optimal Portfolio")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Risk-Free Asset", f"{w_rf_optimal*100:.2f}%")
-    col2.metric("Asset 1", f"{w1_optimal*100:.2f}%")
-    col3.metric("Asset 2", f"{w2_optimal*100:.2f}%")
+    if sd_esg > 0:
+        sharpe_esg = (ret_esg - r_free) / sd_esg
+    else:
+        sharpe_esg = 0
 
-    st.write("")
-    col1, col2 = st.columns(2)
-    col1.metric("Expected Return", f"{ret_optimal*100:.2f}%")
-    col2.metric("Risk (Std Dev)", f"{sd_optimal*100:.2f}%")
+    # ------------------------------
+    # Optimal Portfolio
+    # ------------------------------
+    if sd_esg > 0:
+        w_esg_optimal = (ret_esg - r_free) / (gamma * sd_esg**2)
+    else:
+        w_esg_optimal = 0
 
+    w1_optimal = w_esg_optimal * w1_esg
+    w2_optimal = w_esg_optimal * w2_esg
+    w_rf_optimal = 1 - w_esg_optimal
+
+    ret_optimal = r_free + w_esg_optimal * (ret_esg - r_free)
+    sd_optimal = abs(w_esg_optimal) * sd_esg
+
+    # ------------------------------
+    # Display results
+    # ------------------------------
+    st.subheader("Optimal Portfolio Weights")
+    st.write(f"*Risk-Free Asset:* {w_rf_optimal*100:.2f}%")
+    st.write(f"*Asset 1:* {w1_optimal*100:.2f}%")
+    st.write(f"*Asset 2:* {w2_optimal*100:.2f}%")
+    st.write(f"*Expected Return:* {ret_optimal*100:.2f}%")
+    st.write(f"*Portfolio Risk (Std Dev):* {sd_optimal*100:.2f}%")
+    st.write(f"*Sharpe Ratio:* {sharpe_esg:.4f}")
+    st.write(f"*Portfolio ESG Score:* {esg_portfolio:.2f}")
+
+    # ------------------------------
+    # Plot ESG Opportunity Set
+    # ------------------------------
+    weights_plot = np.linspace(0, 1, 200)
+    esg_frontier = [portfolio_esg(w, esg_h, esg_f) for w in weights_plot]
+    sharpe_frontier = []
+
+    for w in weights_plot:
+        ret = portfolio_ret(w, r_h, r_f)
+        sd = portfolio_sd(w, sd_h, sd_f, rho_hf)
+        if sd > 0:
+            sharpe_frontier.append((ret - r_free) / sd)
+        else:
+            sharpe_frontier.append(0)
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    # ESG opportunity set
+    ax.plot(esg_frontier, sharpe_frontier, 'b-', linewidth=2, label='ESG Opportunity Set')
+
+    # ESG optimal portfolio
+    ax.scatter(esg_portfolio, sharpe_esg, color='red', s=100, marker='*', label='Optimal ESG Portfolio')
+
+    ax.set_xlabel('Portfolio ESG Score')
+    ax.set_ylabel('Sharpe Ratio')
+    ax.set_title('ESG Portfolio Optimisation')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    st.pyplot(fig)
 # ---------------------------
 # Efficient frontier & graph
 # ---------------------------
