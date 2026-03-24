@@ -18,12 +18,12 @@ sd_1 = st.sidebar.number_input("Asset 1 Standard Deviation (%)", value=9.0) / 10
 r_2 = st.sidebar.number_input("Asset 2 Expected Return (%)", value=12.0) / 100
 sd_2 = st.sidebar.number_input("Asset 2 Standard Deviation (%)", value=20.0) / 100
 
-rho = st.sidebar.number_input("Correlation", min_value=-1.0, max_value=1.0, value=-0.2)
+rho = st.sidebar.number_input("Correlation", min_value=-1.0, max_value=1.0, value=0.2)
 
 r_f = st.sidebar.number_input("Risk-Free Rate (%)", value=2.0) / 100
 
 st.sidebar.header("Your Preferences")
-gamma = st.sidebar.slider("Risk Aversion (gamma)", min_value=0.1, max_value=10.0, value=5.0, step=0.1)
+gamma = st.sidebar.slider("Risk Aversion (gamma)", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
 
 # ---------------------------
 # Functions
@@ -34,9 +34,7 @@ def portfolio_ret(w1, r1, r2):
 
 def portfolio_sd(w1, sd1, sd2, rho):
     """Portfolio standard deviation for weight w1 in asset 1"""
-    return np.sqrt(
-        w1**2 * sd1**2 + (1 - w1)**2 * sd2**2 + 2 * rho * w1 * (1 - w1) * sd1 * sd2
-    )
+    return np.sqrt(w1**2 * sd1**2 + (1 - w1)**2 * sd2**2 + 2 * rho * w1 * (1 - w1) * sd1 * sd2)
 
 # ---------------------------
 # Tangency portfolio (Sharpe-maximizing)
@@ -62,14 +60,29 @@ sd_tangency = portfolio_sd(w1_tangency, sd_1, sd_2, rho)
 # ---------------------------
 w_tangency_optimal = (ret_tangency - r_f) / (gamma * sd_tangency**2) if sd_tangency > 0 else 0
 
-# Complete portfolio including risk-free asset
+# Compute raw weights
 w1_optimal = w_tangency_optimal * w1_tangency
 w2_optimal = w_tangency_optimal * w2_tangency
-w_rf_optimal = 1 - w_tangency_optimal
+w_rf_optimal = 1 - (w1_optimal + w2_optimal)
 
-# Optimal portfolio characteristics
-ret_optimal = r_f + w_tangency_optimal * (ret_tangency - r_f)
-sd_optimal = abs(w_tangency_optimal) * sd_tangency
+# ---------------------------
+# Apply weight constraints: 0–100%
+# ---------------------------
+w1_optimal = np.clip(w1_optimal, 0, 1)
+w2_optimal = np.clip(w2_optimal, 0, 1)
+w_rf_optimal = np.clip(w_rf_optimal, 0, 1)
+
+# Normalize so total = 100%
+total = w1_optimal + w2_optimal + w_rf_optimal
+w1_optimal /= total
+w2_optimal /= total
+w_rf_optimal /= total
+
+# Recompute portfolio return & risk
+ret_optimal = w1_optimal * r_1 + w2_optimal * r_2 + w_rf_optimal * r_f
+sd_optimal = np.sqrt(
+    (w1_optimal * sd_1)**2 + (w2_optimal * sd_2)**2 + 2 * w1_optimal * w2_optimal * rho * sd_1 * sd_2
+)
 
 # ---------------------------
 # Display results
