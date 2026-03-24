@@ -30,8 +30,9 @@ st.markdown(
         border-radius: 10px;
     }
     </style>
-    """,
+    """,  # <-- Make sure this closing triple-quote exists
     unsafe_allow_html=True
+)
     
 # ---------------------------
 # App title
