@@ -30,6 +30,13 @@ def portfolio_sd(w1, sd1, sd2, rho):
     return np.sqrt(w1 ** 2 * sd1 ** 2 + (1 - w1) ** 2 * sd2 ** 2 + 2 * rho * w1 * (1 - w1) * sd1 * sd2)
 
 r_h = 0.08  
+ 
+
+sd_h = 0.1     # standard deviation for high-carbon asset
+sd_f = 0.05    # standard deviation for low-carbon (or foreign) asset
+rho_hf = 0.2   # correlation between them
+w = 0.6        # portfolio weight in high-carbon asset
+r_free = 0.04
 
 # Find tangency portfolio
 weights = np.linspace(0, 1, 1000)
