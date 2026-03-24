@@ -8,13 +8,13 @@ st.markdown(
     <style>
     /* Sidebar background */
     [data-testid="stSidebar"] {
-        background-color: black;
-        color: white;
+        background-color: white;
+        color: grey;
     }
     
     /* Main page background */
     [data-testid="stAppViewContainer"] {
-        background-color: #ff4b4b;  /* red */
+        background-color: #ff4b4b;  /* blue */
         color: white;
     }
 
@@ -30,7 +30,7 @@ st.markdown(
         border-radius: 10px;
     }
     </style>
-    """,  # <-- Make sure this closing triple-quote exists
+    """,  
     unsafe_allow_html=True
 )
     
