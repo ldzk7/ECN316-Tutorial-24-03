@@ -29,6 +29,7 @@ def portfolio_ret(w1, r1, r2):
 def portfolio_sd(w1, sd1, sd2, rho):
     return np.sqrt(w1 ** 2 * sd1 ** 2 + (1 - w1) ** 2 * sd2 ** 2 + 2 * rho * w1 * (1 - w1) * sd1 * sd2)
 
+r_h = 0.08  
 
 # Find tangency portfolio
 weights = np.linspace(0, 1, 1000)
