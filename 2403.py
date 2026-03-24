@@ -68,7 +68,7 @@ def portfolio_ret(w1, r1, r2):
     return w1 * r1 + (1 - w1) * r2
 
 def portfolio_sd(w1, sd1, sd2, rho):
-    return np.sqrt(w1*2 * sd12 + (1 - w1)2 * sd2*2 + 2 * rho * w1 * (1 - w1) * sd1 * sd2)
+   return np.sqrt(w1**2 * sd1**2 + (1 - w1)**2 * sd2**2 + 2 * rho * w1 * (1 - w1) * sd1 * sd2)
 
 def portfolio_esg(w1, esg1, esg2):
     return w1 * esg1 + (1 - w1) * esg2
