@@ -8,14 +8,14 @@ st.markdown(
     <style>
     /* Sidebar background */
     [data-testid="stSidebar"] {
-        background-color: white;
-        color: grey;
+        background-color: grey;
+        color: black;
     }
     
     /* Main page background (full) */
     .css-18e3th9 {  /* main content container */
         background-color: blue !important;
-        color: white;
+        color: blue;
     }
 
     /* Body background */
