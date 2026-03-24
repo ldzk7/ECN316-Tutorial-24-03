@@ -59,14 +59,6 @@ rho = st.sidebar.number_input("Correlation", min_value=-1.0, max_value=1.0, valu
 
 r_f = st.sidebar.number_input("Risk-Free Rate (%)", value=2.0) / 100
 
-esg_pref = st.sidebar.slider(
-    "ESG Preference (1 = low, 10 = high)",  # label
-    min_value=1,
-    max_value=10,
-    value=5,  # default
-    step=1
-
-)**
 
 st.sidebar.header("Your Preferences")
 gamma = st.sidebar.slider("Risk Aversion (gamma)", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
