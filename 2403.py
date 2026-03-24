@@ -14,7 +14,7 @@ st.markdown(
     
     /* Full Main page background (full) */
     .stApp {  /* main content container */
-        background-color: blue !important;
+        background-color: lilac !important;
         color: black;
     }
 
