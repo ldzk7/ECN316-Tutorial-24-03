@@ -66,6 +66,8 @@ esg_pref = st.sidebar.slider(
     value=5,  # default
     step=1
 
+)**
+
 st.sidebar.header("Your Preferences")
 gamma = st.sidebar.slider("Risk Aversion (gamma)", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
 
