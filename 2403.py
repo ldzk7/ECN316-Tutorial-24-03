@@ -12,8 +12,8 @@ st.markdown(
         color: black;
     }
     
-    /* Main page background (full) */
-    .css-18e3th9 {  /* main content container */
+    /* Full Main page background (full) */
+    .stApp {  /* main content container */
         background-color: blue !important;
         color: black;
     }
