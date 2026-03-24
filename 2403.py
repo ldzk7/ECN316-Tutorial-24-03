@@ -12,10 +12,16 @@ st.markdown(
         color: grey;
     }
     
-    /* Main page background */
-    [data-testid="stAppViewContainer"] {
-        background-color: #ff4b4b;  /* blue */
+    /* Main page background (full) */
+    .css-18e3th9 {  /* main content container */
+        background-color: blue !important;
         color: white;
+    }
+
+    /* Body background */
+    .css-1d391kg {  /* outermost container */
+        background-color: blue !important;
+    }
     }
 
     /* Header text color */
